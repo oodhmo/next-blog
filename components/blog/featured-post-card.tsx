@@ -15,7 +15,7 @@ export function FeaturedPostCard({ post }: FeaturedPostCardProps) {
 
   return (
     <Link href={`/blog/${post.slug}`} className="group block">
-      <article className="flex overflow-hidden rounded-[20px] border border-border bg-card will-change-transform transition-[translate,scale,box-shadow,border-color] duration-[220ms] [transition-timing-function:cubic-bezier(.22,1,.36,1)] hover:-translate-y-[5px] hover:scale-[1.01] hover:border-[#C0C0E0] hover:shadow-[0_24px_56px_rgba(20,20,80,0.12)] dark:hover:border-[#303050] dark:hover:shadow-[0_24px_56px_rgba(0,0,0,0.62)]">
+      <article className="flex overflow-hidden rounded-[20px] border border-border bg-card will-change-transform transition-[translate,scale,border-color] duration-[220ms] [transition-timing-function:cubic-bezier(.22,1,.36,1)] hover:-translate-y-[5px] hover:scale-[1.01] hover:border-[#C0C0E0] dark:hover:border-[#303050]">
 
         {/* 왼쪽: 본문 영역 */}
         <div className="flex flex-1 flex-col justify-between p-10 min-w-0">
@@ -40,7 +40,7 @@ export function FeaturedPostCard({ post }: FeaturedPostCardProps) {
             </div>
 
             {/* 제목 */}
-            <h2 className="mb-[18px] max-w-[600px] text-[30px] font-bold leading-[1.28] tracking-[-0.9px] text-foreground [text-wrap:pretty] group-hover:text-primary transition-colors">
+            <h2 className="mb-[18px] max-w-[600px] text-[30px] font-bold leading-[1.28] tracking-[-0.9px] text-foreground [text-wrap:pretty]">
               {post.title}
             </h2>
 
@@ -56,8 +56,7 @@ export function FeaturedPostCard({ post }: FeaturedPostCardProps) {
         {/* 오른쪽: 메타 영역 */}
         <div className="flex w-[156px] shrink-0 flex-col items-end justify-between border-l border-border p-10 text-right">
           <div>
-            <p className="font-mono text-[60px] font-bold leading-none tracking-[-4px]"
-              style={{ color: "oklch(62% 0.22 255 / 0.13)" }}>
+            <p className="font-mono text-[60px] font-bold leading-none tracking-[-4px] text-[oklch(62%_0.22_255_/_0.13)] dark:text-[oklch(62%_0.22_255_/_0.38)]">
               {readTime}
             </p>
             <p className="mt-2 font-mono text-[10px] uppercase tracking-[1.5px] text-muted-foreground">

@@ -48,3 +48,14 @@ export type PostWithRelations = Post & {
   categories: CategoryOnPostWithCategory[];
   tags: TagOnPostWithTag[];
 };
+
+export type CommentWithUser = {
+  id: number;
+  content: string;
+  postId: number;
+  userId: string;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt: Date | null;
+  user: { id: string; name: string | null; image: string | null };
+};

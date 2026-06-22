@@ -15,7 +15,7 @@ export function PostCard({ post }: PostCardProps) {
 
   return (
     <Link href={`/blog/${post.slug}`} className="group block h-full">
-      <article className="flex h-full flex-col rounded-[18px] border border-border bg-card p-[26px] pb-[22px] will-change-transform transition-[translate,scale,box-shadow,border-color] duration-[220ms] [transition-timing-function:cubic-bezier(.22,1,.36,1)] hover:-translate-y-[5px] hover:scale-[1.018] hover:border-[#C0C0E0] hover:shadow-[0_24px_56px_rgba(20,20,80,0.12)] dark:hover:border-[#303050] dark:hover:shadow-[0_24px_56px_rgba(0,0,0,0.62)]">
+      <article className="flex h-full flex-col rounded-[18px] border border-border bg-card p-[26px] pb-[22px] will-change-transform transition-[translate,scale,border-color] duration-[220ms] [transition-timing-function:cubic-bezier(.22,1,.36,1)] hover:-translate-y-[5px] hover:scale-[1.018] hover:border-[#C0C0E0] dark:hover:border-[#303050]">
 
         {/* 상단: 카테고리 + 읽기 시간 */}
         <div className="mb-[17px] flex items-center justify-between">
@@ -38,7 +38,7 @@ export function PostCard({ post }: PostCardProps) {
         </div>
 
         {/* 제목 */}
-        <h2 className="mb-[11px] text-[17.5px] font-semibold leading-[1.45] tracking-[-0.4px] text-foreground [text-wrap:pretty] group-hover:text-primary transition-[color] duration-[220ms] [transition-timing-function:cubic-bezier(.22,1,.36,1)] line-clamp-2">
+        <h2 className="mb-[11px] text-[17.5px] font-semibold leading-[1.45] tracking-[-0.4px] text-foreground [text-wrap:pretty] line-clamp-2">
           {post.title}
         </h2>
 

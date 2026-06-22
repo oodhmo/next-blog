@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { formatDate, estimateReadTime } from "@/lib/utils";
 import { Clock, Eye, Calendar } from "lucide-react";
+import { CommentsSection } from "@/components/blog/comments-section";
 import type { PostWithRelations } from "@/types";
 
 type PostDetailProps = {
@@ -99,6 +100,10 @@ export function PostDetail({ post }: PostDetailProps) {
           </div>
         </>
       )}
+
+      {/* 댓글 */}
+      <Separator className="my-8" />
+      <CommentsSection postId={post.id} />
     </article>
   );
 }
