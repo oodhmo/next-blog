@@ -12,6 +12,7 @@ const getPostsSchema = z.object({
   publishedOnly: z.boolean().default(true),
   categorySlug: z.string().optional(),
   tagSlug: z.string().optional(),
+  sort: z.enum(["latest", "oldest", "views"]).default("latest"),
 });
 
 const createPostSchema = z.object({
@@ -40,7 +41,14 @@ export async function getPosts(
     return { success: false, error: "잘못된 요청 파라미터" };
   }
 
-  const { page, limit, publishedOnly, categorySlug, tagSlug } = parsed.data;
+  const { page, limit, publishedOnly, categorySlug, tagSlug, sort } = parsed.data;
+
+  const orderBy =
+    sort === "views"
+      ? [{ viewCount: "desc" as const }]
+      : sort === "oldest"
+        ? [{ publishedAt: { sort: "asc" as const, nulls: "last" as const } }, { createdAt: "asc" as const }]
+        : [{ publishedAt: { sort: "desc" as const, nulls: "last" as const } }, { createdAt: "desc" as const }];
 
   try {
     const posts = await db.post.findMany({
@@ -58,10 +66,7 @@ export async function getPosts(
         categories: { include: { category: true } },
         tags: { include: { tag: true } },
       },
-      orderBy: [
-        { publishedAt: { sort: "desc", nulls: "last" } },
-        { createdAt: "desc" },
-      ],
+      orderBy,
       skip: (page - 1) * limit,
       take: limit,
     });

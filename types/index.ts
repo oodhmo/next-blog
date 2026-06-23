@@ -29,6 +29,8 @@ export type PaginationParams = {
 
 export type SortDirection = "asc" | "desc";
 
+export type PostSortKey = "latest" | "oldest" | "views";
+
 export type WithChildren<T = object> = T & {
   children: ReactNode;
 };

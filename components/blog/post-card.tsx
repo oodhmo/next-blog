@@ -1,15 +1,16 @@
 import Link from "next/link";
 import { Eye } from "lucide-react";
 import { formatDateSimple, formatViewCount, estimateReadTime } from "@/lib/utils";
-import { getCategoryClass } from "@/lib/category-colors";
+import type { CategoryColor } from "@/lib/category-colors";
 import { cn } from "@/lib/utils";
 import type { PostWithRelations } from "@/types";
 
 type PostCardProps = {
   post: PostWithRelations;
+  colorMap: Record<string, CategoryColor>;
 };
 
-export function PostCard({ post }: PostCardProps) {
+export function PostCard({ post, colorMap }: PostCardProps) {
   const readTime = estimateReadTime(post.content);
   const firstCategory = post.categories[0]?.category;
 
@@ -21,11 +22,11 @@ export function PostCard({ post }: PostCardProps) {
         <div className="mb-[17px] flex items-center justify-between">
           {firstCategory ? (
             <span
-              className={cn(
-                "rounded-full font-mono text-[10px] font-medium uppercase tracking-[1.5px] px-2.5 py-1",
-                getCategoryClass(firstCategory.name)
-              )}
-              style={{ color: "var(--cat-fg)", background: "var(--cat-bg)" }}
+              className="rounded-full border font-mono text-[10px] font-medium uppercase tracking-[1.5px] px-2.5 py-1"
+              style={(() => {
+                const c = colorMap[firstCategory.name];
+                return c ? { color: c.text, background: c.bg, borderColor: c.border } : {};
+              })()}
             >
               {firstCategory.name}
             </span>

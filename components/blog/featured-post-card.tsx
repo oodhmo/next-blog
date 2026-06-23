@@ -1,15 +1,16 @@
 import Link from "next/link";
 import { Eye } from "lucide-react";
 import { formatDateSimple, formatViewCount, estimateReadTime } from "@/lib/utils";
-import { getCategoryClass } from "@/lib/category-colors";
-import { cn } from "@/lib/utils";
+import type { CategoryColor } from "@/lib/category-colors";
 import type { PostWithRelations } from "@/types";
 
 type FeaturedPostCardProps = {
   post: PostWithRelations;
+  badge?: string;
+  colorMap: Record<string, CategoryColor>;
 };
 
-export function FeaturedPostCard({ post }: FeaturedPostCardProps) {
+export function FeaturedPostCard({ post, badge = "Latest", colorMap }: FeaturedPostCardProps) {
   const readTime = estimateReadTime(post.content);
   const firstCategory = post.categories[0]?.category;
 
@@ -24,18 +25,18 @@ export function FeaturedPostCard({ post }: FeaturedPostCardProps) {
             <div className="mb-[22px] flex flex-wrap items-center gap-2.5">
               {firstCategory && (
                 <span
-                  className={cn(
-                    "rounded-full font-mono text-[10px] font-medium uppercase tracking-[1.5px] px-2.5 py-1",
-                    getCategoryClass(firstCategory.name)
-                  )}
-                  style={{ color: "var(--cat-fg)", background: "var(--cat-bg)" }}
+                  className="rounded-full border font-mono text-[10px] font-medium uppercase tracking-[1.5px] px-2.5 py-1"
+                  style={(() => {
+                    const c = colorMap[firstCategory.name];
+                    return c ? { color: c.text, background: c.bg, borderColor: c.border } : {};
+                  })()}
                 >
                   {firstCategory.name}
                 </span>
               )}
               <span className="rounded-full font-mono text-[10px] font-medium uppercase tracking-[1px] px-2.5 py-1 text-primary"
                 style={{ background: "oklch(62% 0.22 255 / 0.1)" }}>
-                Latest
+                {badge}
               </span>
             </div>
 

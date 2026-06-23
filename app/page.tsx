@@ -2,17 +2,25 @@ import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { PostList } from "@/components/blog/post-list";
 import { getPosts } from "@/lib/actions/post";
+import { getCategories } from "@/lib/actions/category";
 import { POSTS_PER_HOME } from "@/lib/constants";
+import type { PostSortKey } from "@/types";
 
-export default async function HomePage() {
-  const result = await getPosts({ limit: POSTS_PER_HOME, publishedOnly: true });
+type Props = {
+  searchParams: Promise<{ sort?: string }>;
+};
+
+export default async function HomePage({ searchParams }: Props) {
+  const { sort = "latest" } = await searchParams;
+  const validSort: PostSortKey = (["latest", "oldest", "views"] as const).includes(sort as PostSortKey)
+    ? (sort as PostSortKey)
+    : "latest";
+
+  const [result, categories] = await Promise.all([
+    getPosts({ limit: POSTS_PER_HOME, publishedOnly: true, sort: validSort }),
+    getCategories(),
+  ]);
   const posts = result.success ? result.data : [];
-
-  const categories = Array.from(
-    new Set(
-      posts.flatMap((post) => post.categories.map((c) => c.category.name))
-    )
-  );
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -36,7 +44,7 @@ export default async function HomePage() {
 
         {/* 포스트 목록 */}
         <section className="page-container pb-[100px]">
-          <PostList posts={posts} categories={categories} />
+          <PostList posts={posts} categories={categories} sort={validSort} />
         </section>
       </main>
 
