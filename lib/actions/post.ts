@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import type { ApiResponse, PostWithRelations } from "@/types";
@@ -111,6 +112,184 @@ export async function getPostBySlug(
   } catch (error) {
     console.error("[getPostBySlug]", error);
     return { success: false, error: "포스트 조회 중 오류가 발생했습니다" };
+  }
+}
+
+// ===== 관리자용 액션 =====
+
+const getAdminPostsSchema = z.object({
+  page: z.number().int().positive().default(1),
+  limit: z.number().int().positive().max(100).default(10),
+  search: z.string().optional(),
+  categorySlug: z.string().optional(),
+  tagSlug: z.string().optional(),
+  publishedFilter: z.enum(["all", "published", "unpublished"]).default("all"),
+  sort: z.enum(["latest", "views", "updatedAt"]).default("latest"),
+});
+
+export type AdminPost = {
+  id: number;
+  title: string;
+  slug: string;
+  published: boolean;
+  viewCount: number;
+  updatedAt: Date;
+  createdAt: Date;
+  publishedAt: Date | null;
+  categories: { category: { id: string; name: string; slug: string } }[];
+  tags: { tag: { id: string; name: string; slug: string } }[];
+};
+
+export type AdminPostsResult = {
+  posts: AdminPost[];
+  total: number;
+  totalPages: number;
+};
+
+/**
+ * 관리자용 포스트 목록 조회 (미공개 포함)
+ */
+export async function getAdminPosts(
+  input: Partial<z.infer<typeof getAdminPostsSchema>> = {}
+): Promise<ApiResponse<AdminPostsResult>> {
+  const parsed = getAdminPostsSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false, error: "잘못된 요청 파라미터" };
+  }
+
+  const { page, limit, search, categorySlug, tagSlug, publishedFilter, sort } = parsed.data;
+
+  const where = {
+    ...(search && { title: { contains: search, mode: "insensitive" as const } }),
+    ...(publishedFilter === "published" && { published: true }),
+    ...(publishedFilter === "unpublished" && { published: false }),
+    ...(categorySlug && { categories: { some: { category: { slug: categorySlug } } } }),
+    ...(tagSlug && { tags: { some: { tag: { slug: tagSlug } } } }),
+  };
+
+  const orderBy =
+    sort === "views"
+      ? [{ viewCount: "desc" as const }]
+      : sort === "updatedAt"
+        ? [{ updatedAt: "desc" as const }]
+        : [{ publishedAt: { sort: "desc" as const, nulls: "last" as const } }, { createdAt: "desc" as const }];
+
+  try {
+    const [posts, total] = await Promise.all([
+      db.post.findMany({
+        where,
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          published: true,
+          viewCount: true,
+          updatedAt: true,
+          createdAt: true,
+          publishedAt: true,
+          categories: { include: { category: true } },
+          tags: { include: { tag: true } },
+        },
+        orderBy,
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      db.post.count({ where }),
+    ]);
+
+    return {
+      success: true,
+      data: {
+        posts: posts as AdminPost[],
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  } catch (error) {
+    console.error("[getAdminPosts]", error);
+    return { success: false, error: "포스트 조회 중 오류가 발생했습니다" };
+  }
+}
+
+/**
+ * 포스트 통계 조회 (전체/공개/비공개 수)
+ */
+export async function getPostStats(): Promise<ApiResponse<{ total: number; published: number; unpublished: number }>> {
+  try {
+    const [total, published] = await Promise.all([
+      db.post.count(),
+      db.post.count({ where: { published: true } }),
+    ]);
+    return { success: true, data: { total, published, unpublished: total - published } };
+  } catch (error) {
+    console.error("[getPostStats]", error);
+    return { success: false, error: "통계 조회 중 오류가 발생했습니다" };
+  }
+}
+
+/**
+ * 포스트 삭제
+ */
+export async function deletePost(id: number): Promise<ApiResponse<null>> {
+  try {
+    await db.post.delete({ where: { id } });
+    revalidatePath("/admin");
+    revalidatePath("/");
+    return { success: true, data: null };
+  } catch (error) {
+    console.error("[deletePost]", error);
+    return { success: false, error: "포스트 삭제 중 오류가 발생했습니다" };
+  }
+}
+
+/**
+ * 포스트 공개/비공개 전환
+ */
+export async function togglePostPublished(id: number, published: boolean): Promise<ApiResponse<null>> {
+  try {
+    await db.post.update({
+      where: { id },
+      data: {
+        published,
+        publishedAt: published ? new Date() : null,
+      },
+    });
+    revalidatePath("/admin");
+    revalidatePath("/");
+    return { success: true, data: null };
+  } catch (error) {
+    console.error("[togglePostPublished]", error);
+    return { success: false, error: "상태 변경 중 오류가 발생했습니다" };
+  }
+}
+
+/**
+ * 포스트 일괄 작업 (공개/비공개/삭제)
+ */
+export async function bulkUpdatePosts(
+  ids: number[],
+  action: "publish" | "unpublish" | "delete"
+): Promise<ApiResponse<null>> {
+  if (ids.length === 0) return { success: false, error: "선택된 포스트가 없습니다" };
+
+  try {
+    if (action === "delete") {
+      await db.post.deleteMany({ where: { id: { in: ids } } });
+    } else {
+      await db.post.updateMany({
+        where: { id: { in: ids } },
+        data: {
+          published: action === "publish",
+          publishedAt: action === "publish" ? new Date() : null,
+        },
+      });
+    }
+    revalidatePath("/admin");
+    revalidatePath("/");
+    return { success: true, data: null };
+  } catch (error) {
+    console.error("[bulkUpdatePosts]", error);
+    return { success: false, error: "일괄 처리 중 오류가 발생했습니다" };
   }
 }
 
