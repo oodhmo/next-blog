@@ -117,20 +117,6 @@
   animation: blink 1.1s step-end infinite;
 }
 
-/* ===== 카테고리별 태그 색상 ===== */
-.cat-react       { --cat-fg: oklch(65% 0.2 195);  --cat-bg: oklch(65% 0.08 195 / 0.12); }
-.cat-css         { --cat-fg: oklch(62% 0.22 255); --cat-bg: oklch(62% 0.08 255 / 0.1);  }
-.cat-typescript  { --cat-fg: oklch(62% 0.2 280);  --cat-bg: oklch(62% 0.08 280 / 0.1);  }
-.cat-performance { --cat-fg: oklch(63% 0.2 145);  --cat-bg: oklch(63% 0.08 145 / 0.1);  }
-.cat-animation   { --cat-fg: oklch(65% 0.2 30);   --cat-bg: oklch(65% 0.08 30 / 0.12);  }
-.cat-default     { --cat-fg: oklch(62% 0.22 255); --cat-bg: oklch(62% 0.08 255 / 0.1);  }
-
-.dark .cat-react       { --cat-bg: oklch(65% 0.12 195 / 0.2);  }
-.dark .cat-css         { --cat-bg: oklch(62% 0.12 255 / 0.18); }
-.dark .cat-typescript  { --cat-bg: oklch(62% 0.12 280 / 0.18); }
-.dark .cat-performance { --cat-bg: oklch(63% 0.12 145 / 0.18); }
-.dark .cat-animation   { --cat-bg: oklch(65% 0.12 30 / 0.18);  }
-.dark .cat-default     { --cat-bg: oklch(62% 0.12 255 / 0.18); }
 
 @layer base {
   * {
