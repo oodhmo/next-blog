@@ -2,7 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { generateSlug } from "@/lib/utils";
 import type { ApiResponse, PostWithRelations } from "@/types";
 
 // --- Zod 스키마 ---
@@ -54,7 +56,10 @@ export async function getPosts(
   try {
     const posts = await db.post.findMany({
       where: {
-        ...(publishedOnly && { published: true }),
+        ...(publishedOnly && {
+          published: true,
+          publishedAt: { lte: new Date() },
+        }),
         ...(categorySlug && {
           categories: { some: { category: { slug: categorySlug } } },
         }),
@@ -290,6 +295,183 @@ export async function bulkUpdatePosts(
   } catch (error) {
     console.error("[bulkUpdatePosts]", error);
     return { success: false, error: "일괄 처리 중 오류가 발생했습니다" };
+  }
+}
+
+/**
+ * ID로 단일 포스트 조회 (관계 포함, 관리자용)
+ */
+export async function getPostById(id: number): Promise<ApiResponse<PostWithRelations>> {
+  try {
+    const post = await db.post.findUnique({
+      where: { id },
+      include: {
+        author: { select: { id: true, name: true, avatar: true, bio: true } },
+        categories: { include: { category: true } },
+        tags: { include: { tag: true } },
+      },
+    });
+    if (!post) return { success: false, error: "포스트를 찾을 수 없습니다" };
+    return { success: true, data: post as PostWithRelations };
+  } catch (error) {
+    console.error("[getPostById]", error);
+    return { success: false, error: "포스트 조회 중 오류가 발생했습니다" };
+  }
+}
+
+/**
+ * 에디터 페이지에서 포스트 수정
+ */
+export async function updateEditorPost(
+  postId: number,
+  input: {
+    title: string;
+    content: string;
+    excerpt?: string;
+    tagNames: string[];
+    categoryId: string;
+    published: boolean;
+    publishedAt?: Date;
+  }
+): Promise<ApiResponse<{ id: number; slug: string }>> {
+  const session = await auth();
+  if (!session?.user?.email) return { success: false, error: "로그인이 필요합니다" };
+
+  const { title, content, excerpt, tagNames, categoryId, published, publishedAt } = input;
+
+  if (!title.trim()) return { success: false, error: "제목을 입력해주세요" };
+  if (!content.trim() || content === "<p></p>") return { success: false, error: "내용을 입력해주세요" };
+
+  try {
+    const tagIds: string[] = [];
+    for (const name of tagNames) {
+      const trimmed = name.trim();
+      if (!trimmed) continue;
+      const slug = generateSlug(trimmed) || trimmed.toLowerCase();
+      const tag = await db.tag.upsert({
+        where: { slug },
+        create: { name: trimmed, slug },
+        update: {},
+      });
+      tagIds.push(tag.id);
+    }
+
+    // 기존 카테고리/태그 관계 교체
+    await db.categoryOnPost.deleteMany({ where: { postId } });
+    await db.tagOnPost.deleteMany({ where: { postId } });
+
+    if (categoryId) {
+      await db.categoryOnPost.create({ data: { postId, categoryId } });
+    }
+    if (tagIds.length > 0) {
+      await db.tagOnPost.createMany({
+        data: tagIds.map((tagId) => ({ postId, tagId })),
+      });
+    }
+
+    const post = await db.post.update({
+      where: { id: postId },
+      data: {
+        title: title.trim(),
+        content,
+        excerpt: excerpt?.trim() || null,
+        published,
+        publishedAt: published ? (publishedAt ?? new Date()) : null,
+      },
+      select: { id: true, slug: true },
+    });
+
+    revalidatePath("/studio-sy");
+    revalidatePath("/");
+    revalidatePath(`/blog/${post.slug}`);
+    return { success: true, data: { id: post.id, slug: post.slug } };
+  } catch (error) {
+    console.error("[updateEditorPost]", error);
+    return { success: false, error: "포스트 수정 중 오류가 발생했습니다" };
+  }
+}
+
+/**
+ * 에디터 페이지에서 포스트 저장 (태그 이름으로 find-or-create, HTML content)
+ */
+export async function saveEditorPost(input: {
+  title: string;
+  content: string;
+  excerpt?: string;
+  tagNames: string[];
+  categoryId: string;
+  published: boolean;
+  publishedAt?: Date;
+}): Promise<ApiResponse<{ id: number; slug: string }>> {
+  const session = await auth();
+  if (!session?.user?.email) {
+    return { success: false, error: "로그인이 필요합니다" };
+  }
+
+  const { title, content, excerpt, tagNames, categoryId, published, publishedAt } = input;
+
+  if (!title.trim()) return { success: false, error: "제목을 입력해주세요" };
+  if (!content.trim() || content === "<p></p>") return { success: false, error: "내용을 입력해주세요" };
+
+  try {
+    const author = await db.author.findUnique({ where: { email: session.user.email } });
+    if (!author) {
+      return { success: false, error: "작성자 정보를 찾을 수 없습니다. 관리자에게 문의하세요." };
+    }
+
+    // 태그 이름 → find-or-create → ID 수집
+    const tagIds: string[] = [];
+    for (const name of tagNames) {
+      const trimmed = name.trim();
+      if (!trimmed) continue;
+      const slug = generateSlug(trimmed) || trimmed.toLowerCase();
+      const tag = await db.tag.upsert({
+        where: { slug },
+        create: { name: trimmed, slug },
+        update: {},
+      });
+      tagIds.push(tag.id);
+    }
+
+    // slug 생성 (중복 시 숫자 접미사)
+    let slug = generateSlug(title) || "untitled";
+    const existing = await db.post.findUnique({ where: { slug } });
+    if (existing) {
+      let suffix = 1;
+      while (await db.post.findUnique({ where: { slug: `${slug}-${suffix}` } })) {
+        suffix++;
+      }
+      slug = `${slug}-${suffix}`;
+    }
+
+    const post = await db.post.create({
+      data: {
+        title: title.trim(),
+        slug,
+        content,
+        excerpt: excerpt?.trim() || null,
+        published,
+        publishedAt: published ? (publishedAt ?? new Date()) : null,
+        author: { connect: { id: author.id } },
+        ...(categoryId && {
+          categories: { create: [{ category: { connect: { id: categoryId } } }] },
+        }),
+        ...(tagIds.length > 0 && {
+          tags: { create: tagIds.map((id) => ({ tag: { connect: { id } } })) },
+        }),
+      },
+      select: { id: true, slug: true },
+    });
+
+    revalidatePath("/studio-sy");
+    revalidatePath("/");
+    return { success: true, data: { id: post.id, slug: post.slug } };
+  } catch (error) {
+    console.error("[saveEditorPost]", error);
+    if ((error as { code?: string }).code === "P2002") {
+      return { success: false, error: "이미 사용 중인 slug입니다. 제목을 조금 바꿔보세요." };
+    }
+    return { success: false, error: "포스트 저장 중 오류가 발생했습니다" };
   }
 }
 

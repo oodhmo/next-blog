@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "PowerShell(Head-Object *)"
+      "PowerShell(Head-Object *)",
+      "Bash(node *)",
+      "Bash(npm install *)",
+      "Bash(npx shadcn@latest add popover calendar --yes)",
+      "Bash(npx tsc *)"
     ],
     "deny": [
       "Read(./.env)",

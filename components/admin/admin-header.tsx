@@ -25,7 +25,7 @@ export function AdminHeader() {
         {/* 우측: 새 글 작성 버튼 + 다크모드 토글 */}
         <div className="flex items-center gap-2">
           <Button asChild size="sm" className="gap-2 px-4">
-            <Link href="/studio-sy/editor/new">
+            <Link href="/studio-sy/editor">
               <Plus className="h-4 w-4" />
               새 포스트
             </Link>
