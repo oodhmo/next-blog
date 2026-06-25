@@ -38,7 +38,8 @@ export function truncate(text: string, maxLength = 150): string {
 
 // 읽기 시간 추정 (분)
 export function estimateReadTime(content: string, wordsPerMinute = 200): number {
-  const wordCount = content.split(/\s+/).length;
+  const plainText = content.replace(/<[^>]*>/g, " ");
+  const wordCount = plainText.split(/\s+/).filter(Boolean).length;
   return Math.ceil(wordCount / wordsPerMinute);
 }
 

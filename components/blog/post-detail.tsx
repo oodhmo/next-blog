@@ -2,6 +2,7 @@ import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { formatDate, estimateReadTime } from "@/lib/utils";
+import { highlightCodeBlocks } from "@/lib/highlight";
 import { Clock, Eye, Calendar } from "lucide-react";
 import { CommentsSection } from "@/components/blog/comments-section";
 import type { PostWithRelations } from "@/types";
@@ -83,9 +84,10 @@ export function PostDetail({ post }: PostDetailProps) {
       <Separator className="mb-8" />
 
       {/* 본문 */}
-      <div className="prose prose-zinc dark:prose-invert max-w-none">
-        <p className="whitespace-pre-wrap leading-relaxed">{post.content}</p>
-      </div>
+      <div
+        className="post-content max-w-none"
+        dangerouslySetInnerHTML={{ __html: highlightCodeBlocks(post.content) }}
+      />
 
       {/* 태그 */}
       {post.tags.length > 0 && (

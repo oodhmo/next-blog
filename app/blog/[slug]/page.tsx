@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const post = result.data;
   return {
     title: post.title,
-    description: post.excerpt ?? post.content.slice(0, 160),
+    description: post.excerpt ?? post.content.replace(/<[^>]*>/g, " ").trim().slice(0, 160),
     openGraph: {
       title: post.title,
       description: post.excerpt ?? undefined,
