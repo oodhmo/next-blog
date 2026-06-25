@@ -43,7 +43,7 @@ export default function RootLayout({
       <body
         className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} antialiased min-h-screen bg-background font-sans`}
       >
-        <NextTopLoader showSpinner={false} color="var(--color-primary)" />
+        <NextTopLoader showSpinner={false} color="#111118" />
         <Providers>
           {children}
           <Toaster theme="system" richColors />
