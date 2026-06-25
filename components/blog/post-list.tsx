@@ -111,7 +111,7 @@ export function PostList({ posts, categories, sort }: PostListProps) {
         <span className="shrink-0 font-mono text-[12px] text-muted-foreground">
           {filteredPosts.length} posts
         </span>
-        <div className="h-px flex-1 bg-border" />
+        <div className="h-px flex-1" />
       </div>
 
       {filteredPosts.length === 0 ? (

@@ -20,8 +20,12 @@ export async function CommentsSection({ postId }: Props) {
   return (
     <section aria-label="댓글">
       <CommentForm postId={postId} />
-      <Separator className="my-6" />
-      <CommentList comments={comments} currentUserId={currentUserId} />
+      {comments.length > 0 && (
+        <>
+          <Separator className="my-6" />
+          <CommentList comments={comments} currentUserId={currentUserId} />
+        </>
+      )}
     </section>
   )
 }

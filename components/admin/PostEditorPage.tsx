@@ -7,6 +7,7 @@ import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, CalendarIcon, X, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -191,6 +192,7 @@ export function PostEditorPage({ categories, post, initialComments }: PostEditor
           >
             {isSaving ? "저장 중..." : "발행하기"}
           </Button>
+          <ThemeToggle />
         </div>
       </header>
 

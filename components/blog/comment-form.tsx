@@ -101,8 +101,9 @@ export function CommentForm({ postId }: Props) {
               type="submit"
               size="sm"
               disabled={!content.trim() || isPending}
+              className="bg-black text-white hover:bg-black/80 dark:bg-white dark:text-black dark:hover:bg-white/80"
             >
-              {isPending ? "등록 중..." : "댓글 등록"}
+              {isPending ? "등록 중..." : "등록"}
             </Button>
           </div>
         )}

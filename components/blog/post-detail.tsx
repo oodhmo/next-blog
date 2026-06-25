@@ -90,7 +90,7 @@ export function PostDetail({ post }: PostDetailProps) {
       {/* 태그 */}
       {post.tags.length > 0 && (
         <>
-          <Separator className="my-8" />
+          <br/><br/>
           <div className="flex flex-wrap gap-2">
             {post.tags.map(({ tag }) => (
               <Badge key={tag.id} variant="outline">
