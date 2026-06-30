@@ -38,33 +38,33 @@ model Author {
 }
 
 model Category {
-  id    String           @id @default(cuid())
+  id    Int              @id @default(autoincrement())
   name  String
   slug  String           @unique
   posts CategoryOnPost[]
 }
 
 model Tag {
-  id    String      @id @default(cuid())
+  id    Int         @id @default(autoincrement())
   name  String
   slug  String      @unique
   posts TagOnPost[]
 }
 
 model CategoryOnPost {
-  categoryId String
+  categoryId Int
   postId     Int
-  category   Category @relation(fields: [categoryId], references: [id])
-  post       Post     @relation(fields: [postId], references: [id], onDelete: NoAction)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  post       Post     @relation(fields: [postId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@id([categoryId, postId])
 }
 
 model TagOnPost {
-  tagId  String
+  tagId  Int
   postId Int
-  post   Post   @relation(fields: [postId], references: [id], onDelete: NoAction)
-  tag    Tag    @relation(fields: [tagId], references: [id])
+  tag    Tag  @relation(fields: [tagId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  post   Post @relation(fields: [postId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@id([tagId, postId])
 }

@@ -27,7 +27,7 @@ type CategoryManagerProps = {
 
 export function CategoryManager({ initialCategories }: CategoryManagerProps) {
   const [categories, setCategories] = useState<AdminCategory[]>(initialCategories);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState("");
   const [editSlug, setEditSlug] = useState("");
   const [isCreating, setIsCreating] = useState(false);

@@ -53,7 +53,7 @@ export function PostEditorPage({ categories, post, initialComments }: PostEditor
   );
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [categoryId, setCategoryId] = useState<string>(
-    post?.categories[0]?.category.id ?? ""
+    post?.categories[0]?.category.id.toString() ?? ""
   );
   const [editorText, setEditorText] = useState("");
   const [editorHtml, setEditorHtml] = useState(post?.content ?? "");
@@ -241,7 +241,7 @@ export function PostEditorPage({ categories, post, initialComments }: PostEditor
                   </div>
                 ) : (
                   categories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id} className="font-mono text-[12px]">
+                    <SelectItem key={cat.id} value={cat.id.toString()} className="font-mono text-[12px]">
                       {cat.name}
                     </SelectItem>
                   ))

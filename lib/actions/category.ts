@@ -5,7 +5,7 @@ import { db } from "@/lib/db";
 import type { ApiResponse } from "@/types";
 
 export type AdminTag = {
-  id: string;
+  id: number;
   name: string;
   slug: string;
   _count: { posts: number };
@@ -24,17 +24,17 @@ export async function getAllTags(): Promise<ApiResponse<AdminTag[]>> {
   }
 }
 
-export async function getCategories(): Promise<string[]> {
+export async function getCategories(): Promise<{ name: string; slug: string }[]> {
   const categories = await db.category.findMany({
     where: { posts: { some: { post: { published: true } } } },
     orderBy: { id: "asc" },
-    select: { name: true },
+    select: { name: true, slug: true },
   });
-  return categories.map((c) => c.name);
+  return categories;
 }
 
 export type AdminCategory = {
-  id: string;
+  id: number;
   name: string;
   slug: string;
   _count: { posts: number };
@@ -87,7 +87,7 @@ export async function createCategory(name: string, slug: string): Promise<ApiRes
 /**
  * 카테고리 수정
  */
-export async function updateCategory(id: string, name: string, slug: string): Promise<ApiResponse<AdminCategory>> {
+export async function updateCategory(id: number, name: string, slug: string): Promise<ApiResponse<AdminCategory>> {
   if (!name.trim() || !slug.trim()) {
     return { success: false, error: "이름과 슬러그를 입력해주세요" };
   }
@@ -116,7 +116,7 @@ export async function updateCategory(id: string, name: string, slug: string): Pr
 /**
  * 카테고리 삭제
  */
-export async function deleteCategory(id: string): Promise<ApiResponse<null>> {
+export async function deleteCategory(id: number): Promise<ApiResponse<null>> {
   try {
     await db.category.delete({ where: { id } });
     revalidatePath("/admin");
