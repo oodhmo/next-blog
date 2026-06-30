@@ -15,6 +15,7 @@ const getPostsSchema = z.object({
   publishedOnly: z.boolean().default(true),
   categorySlug: z.string().optional(),
   tagSlug: z.string().optional(),
+  search: z.string().optional(),
   sort: z.enum(["latest", "oldest", "views"]).default("latest"),
 });
 
@@ -29,22 +30,27 @@ const createPostSchema = z.object({
   coverImage: z.string().url().optional(),
   published: z.boolean().default(false),
   authorId: z.string(),
-  categoryIds: z.array(z.string()).default([]),
-  tagIds: z.array(z.string()).default([]),
+  categoryIds: z.array(z.number()).default([]),
+  tagIds: z.array(z.number()).default([]),
 });
 
 /**
  * 포스트 목록 조회
  */
+export type PostsResult = {
+  posts: PostWithRelations[];
+  hasMore: boolean;
+};
+
 export async function getPosts(
   input: Partial<z.infer<typeof getPostsSchema>> = {}
-): Promise<ApiResponse<PostWithRelations[]>> {
+): Promise<ApiResponse<PostsResult>> {
   const parsed = getPostsSchema.safeParse(input);
   if (!parsed.success) {
     return { success: false, error: "잘못된 요청 파라미터" };
   }
 
-  const { page, limit, publishedOnly, categorySlug, tagSlug, sort } = parsed.data;
+  const { page, limit, publishedOnly, categorySlug, tagSlug, search, sort } = parsed.data;
 
   const orderBy =
     sort === "views"
@@ -56,16 +62,14 @@ export async function getPosts(
   try {
     const posts = await db.post.findMany({
       where: {
-        ...(publishedOnly && {
-          published: true,
-          publishedAt: { lte: new Date() },
-        }),
+        ...(publishedOnly && { published: true }),
         ...(categorySlug && {
           categories: { some: { category: { slug: categorySlug } } },
         }),
         ...(tagSlug && {
           tags: { some: { tag: { slug: tagSlug } } },
         }),
+        ...(search && { title: { contains: search, mode: "insensitive" as const } }),
       },
       include: {
         author: { select: { id: true, name: true, avatar: true, bio: true } },
@@ -77,7 +81,10 @@ export async function getPosts(
       take: limit,
     });
 
-    return { success: true, data: posts as PostWithRelations[] };
+    return {
+      success: true,
+      data: { posts: posts as PostWithRelations[], hasMore: posts.length === limit },
+    };
   } catch (error) {
     console.error("[getPosts]", error);
     return { success: false, error: "포스트 조회 중 오류가 발생했습니다" };
@@ -141,8 +148,8 @@ export type AdminPost = {
   updatedAt: Date;
   createdAt: Date;
   publishedAt: Date | null;
-  categories: { category: { id: string; name: string; slug: string } }[];
-  tags: { tag: { id: string; name: string; slug: string } }[];
+  categories: { category: { id: number; name: string; slug: string } }[];
+  tags: { tag: { id: number; name: string; slug: string } }[];
 };
 
 export type AdminPostsResult = {
@@ -343,7 +350,7 @@ export async function updateEditorPost(
   if (!content.trim() || content === "<p></p>") return { success: false, error: "내용을 입력해주세요" };
 
   try {
-    const tagIds: string[] = [];
+    const tagIds: number[] = [];
     for (const name of tagNames) {
       const trimmed = name.trim();
       if (!trimmed) continue;
@@ -360,8 +367,9 @@ export async function updateEditorPost(
     await db.categoryOnPost.deleteMany({ where: { postId } });
     await db.tagOnPost.deleteMany({ where: { postId } });
 
-    if (categoryId) {
-      await db.categoryOnPost.create({ data: { postId, categoryId } });
+    const categoryIdNum = categoryId ? parseInt(categoryId, 10) : null;
+    if (categoryIdNum) {
+      await db.categoryOnPost.create({ data: { postId, categoryId: categoryIdNum } });
     }
     if (tagIds.length > 0) {
       await db.tagOnPost.createMany({
@@ -420,7 +428,7 @@ export async function saveEditorPost(input: {
     }
 
     // 태그 이름 → find-or-create → ID 수집
-    const tagIds: string[] = [];
+    const tagIds: number[] = [];
     for (const name of tagNames) {
       const trimmed = name.trim();
       if (!trimmed) continue;
@@ -444,6 +452,7 @@ export async function saveEditorPost(input: {
       slug = `${slug}-${suffix}`;
     }
 
+    const categoryIdNum = categoryId ? parseInt(categoryId, 10) : null;
     const post = await db.post.create({
       data: {
         title: title.trim(),
@@ -453,8 +462,8 @@ export async function saveEditorPost(input: {
         published,
         publishedAt: published ? (publishedAt ?? new Date()) : null,
         author: { connect: { id: author.id } },
-        ...(categoryId && {
-          categories: { create: [{ category: { connect: { id: categoryId } } }] },
+        ...(categoryIdNum && {
+          categories: { create: [{ category: { connect: { id: categoryIdNum } } }] },
         }),
         ...(tagIds.length > 0 && {
           tags: { create: tagIds.map((id) => ({ tag: { connect: { id } } })) },
