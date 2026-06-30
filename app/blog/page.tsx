@@ -4,6 +4,7 @@ import { Footer } from "@/components/layout/footer";
 import { PostList } from "@/components/blog/post-list";
 import { getPosts } from "@/lib/actions/post";
 import { getCategories } from "@/lib/actions/category";
+import { POSTS_PER_PAGE } from "@/lib/constants";
 import type { PostSortKey } from "@/types";
 
 export const metadata: Metadata = {
@@ -22,10 +23,11 @@ export default async function BlogPage({ searchParams }: Props) {
     : "latest";
 
   const [result, categories] = await Promise.all([
-    getPosts({ publishedOnly: true, limit: 100, sort: validSort }),
+    getPosts({ publishedOnly: true, limit: POSTS_PER_PAGE, sort: validSort }),
     getCategories(),
   ]);
-  const posts = result.success ? result.data : [];
+  const posts = result.success ? result.data.posts : [];
+  const hasMore = result.success ? result.data.hasMore : false;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -34,9 +36,8 @@ export default async function BlogPage({ searchParams }: Props) {
       <main className="flex-1 page-container py-12">
         <div className="mb-8">
           <h1 className="text-3xl font-bold">블로그</h1>
-          <p className="mt-2 text-muted-foreground">총 {posts.length}개의 포스트</p>
         </div>
-        <PostList posts={posts} categories={categories} sort={validSort} />
+        <PostList key={validSort} initialPosts={posts} initialHasMore={hasMore} categories={categories} sort={validSort} />
       </main>
 
       <Footer />
