@@ -1,9 +1,11 @@
 "use client";
 
-import { useEditor, EditorContent } from "@tiptap/react";
+import { useEditor, EditorContent, ReactNodeViewRenderer } from "@tiptap/react";
 import { Extension } from "@tiptap/core";
+import { ResizableImageView } from "@/components/admin/ResizableImageView";
 import StarterKit from "@tiptap/starter-kit";
 import TiptapLink from "@tiptap/extension-link";
+import TiptapImage from "@tiptap/extension-image";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
 import { createLowlight, all } from "lowlight";
 import { useEffect } from "react";
@@ -18,6 +20,42 @@ const TabIndent = Extension.create({
     return {
       Tab: () => this.editor.commands.insertContent("  "),
     };
+  },
+});
+
+// data-s3-key, width, height 속성 + 리사이즈 핸들(NodeView) 지원 커스텀 이미지 확장
+const CustomImage = TiptapImage.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      "data-s3-key": {
+        default: null,
+        parseHTML: (element) => element.getAttribute("data-s3-key"),
+        renderHTML: (attributes) =>
+          attributes["data-s3-key"] ? { "data-s3-key": attributes["data-s3-key"] } : {},
+      },
+      width: {
+        default: null,
+        parseHTML: (element) => {
+          const val = element.getAttribute("width");
+          return val ? Number(val) : null;
+        },
+        renderHTML: (attributes) =>
+          attributes.width ? { width: String(attributes.width) } : {},
+      },
+      height: {
+        default: null,
+        parseHTML: (element) => {
+          const val = element.getAttribute("height");
+          return val ? Number(val) : null;
+        },
+        renderHTML: (attributes) =>
+          attributes.height ? { height: String(attributes.height) } : {},
+      },
+    };
+  },
+  addNodeView() {
+    return ReactNodeViewRenderer(ResizableImageView);
   },
 });
 
@@ -40,7 +78,7 @@ export function PostEditor({ slug, initialContent, onChange, onHtmlChange }: Pos
         listItem: false,
         horizontalRule: false,
         strike: false,
-        codeBlock: false, // CodeBlockLowlight로 대체
+        codeBlock: false,
       }),
       TiptapLink.configure({
         openOnClick: false,
@@ -50,6 +88,10 @@ export function PostEditor({ slug, initialContent, onChange, onHtmlChange }: Pos
         lowlight,
         defaultLanguage: "javascript",
         HTMLAttributes: { class: "hljs" },
+      }),
+      CustomImage.configure({
+        HTMLAttributes: { class: "max-w-full rounded-lg my-2" },
+        allowBase64: false,
       }),
       TabIndent,
     ],
@@ -62,7 +104,23 @@ export function PostEditor({ slug, initialContent, onChange, onHtmlChange }: Pos
     if (!editor) return;
     const handleUpdate = () => {
       onChange?.(editor.getText());
-      onHtmlChange?.(editor.getHTML());
+
+      // img[data-s3-key]의 src를 key 값으로 교체 (DB 저장용 HTML 생성)
+      // DOM 조작 대신 정규식으로 처리 — detached img에 src 설정 시 브라우저가
+      // S3 key를 상대 URL로 해석해 네트워크 요청을 발생시키는 문제 방지
+      const html = editor.getHTML();
+      const processed = html.replace(
+        /<img\b[^>]*data-s3-key="[^"]*"[^>]*>/gi,
+        (imgTag) => {
+          const keyMatch = imgTag.match(/data-s3-key="([^"]*)"/);
+          if (!keyMatch) return imgTag;
+          const key = keyMatch[1];
+          return imgTag
+            .replace(/\bsrc="[^"]*"/, `src="${key}"`)
+            .replace(/\s?data-s3-key="[^"]*"/, "");
+        }
+      );
+      onHtmlChange?.(processed);
     };
     // 에디터 초기화 직후 부모 state 동기화 (초기 콘텐츠 반영)
     handleUpdate();
@@ -80,7 +138,6 @@ export function PostEditor({ slug, initialContent, onChange, onHtmlChange }: Pos
       <div
         className="flex-1 cursor-text overflow-auto px-12 py-8"
         onClick={(e) => {
-          // 에디터 내부 클릭은 ProseMirror가 직접 처리하므로 무시
           if ((e.target as HTMLElement).closest(".ProseMirror")) return;
           editor?.commands.focus("end");
         }}

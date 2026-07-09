@@ -3,6 +3,7 @@ import { PostEditorPage } from "@/components/admin/PostEditorPage";
 import { getPostById } from "@/lib/actions/post";
 import { getAllCategories } from "@/lib/actions/category";
 import { getComments } from "@/lib/actions/comment";
+import { replaceKeysWithPresignedUrlsForEditor } from "@/lib/s3";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -32,11 +33,17 @@ export default async function EditorEditPage({ params }: Props) {
   const categories = categoriesResult.success ? (categoriesResult.data ?? []) : [];
   const comments = commentsResult.success ? commentsResult.data : [];
 
+  // 에디터 표시용: key src → presigned URL + data-s3-key 변환
+  const initialEditorContent = await replaceKeysWithPresignedUrlsForEditor(
+    postResult.data.content
+  );
+
   return (
     <PostEditorPage
       categories={categories}
       post={postResult.data}
       initialComments={comments}
+      initialEditorContent={initialEditorContent}
     />
   );
 }

@@ -35,9 +35,10 @@ interface PostEditorPageProps {
   categories: AdminCategory[];
   post?: PostWithRelations;
   initialComments?: CommentWithUser[];
+  initialEditorContent?: string; // 에디터 표시용 (presigned URL + data-s3-key 포함)
 }
 
-export function PostEditorPage({ categories, post, initialComments }: PostEditorPageProps) {
+export function PostEditorPage({ categories, post, initialComments, initialEditorContent }: PostEditorPageProps) {
   const router = useRouter();
   const isEditMode = !!post;
 
@@ -202,7 +203,7 @@ export function PostEditorPage({ categories, post, initialComments }: PostEditor
         <main className="flex flex-1 flex-col overflow-hidden border-r border-border">
           <PostEditor
             slug={slug}
-            initialContent={post?.content}
+            initialContent={initialEditorContent ?? post?.content}
             onChange={handleEditorChange}
             onHtmlChange={handleEditorHtmlChange}
           />

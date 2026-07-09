@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { formatDate, estimateReadTime } from "@/lib/utils";
 import { highlightCodeBlocks } from "@/lib/highlight";
+import { replaceKeysWithPresignedUrls } from "@/lib/s3";
 import { Clock, Eye, Calendar } from "lucide-react";
 import { CommentsSection } from "@/components/blog/comments-section";
 import type { PostWithRelations } from "@/types";
@@ -11,7 +12,9 @@ type PostDetailProps = {
   post: PostWithRelations;
 };
 
-export function PostDetail({ post }: PostDetailProps) {
+export async function PostDetail({ post }: PostDetailProps) {
+  const content = await replaceKeysWithPresignedUrls(post.content);
+
   return (
     <article className="mx-auto max-w-2xl">
       {/* 헤더 */}
@@ -86,7 +89,7 @@ export function PostDetail({ post }: PostDetailProps) {
       {/* 본문 */}
       <div
         className="post-content max-w-none"
-        dangerouslySetInnerHTML={{ __html: highlightCodeBlocks(post.content) }}
+        dangerouslySetInnerHTML={{ __html: highlightCodeBlocks(content) }}
       />
 
       {/* 태그 */}
