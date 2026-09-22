@@ -24,7 +24,6 @@ export function AdminView({ stats, initialCategories, initialTags }: AdminViewPr
       <AdminHeader />
 
       <main className="mx-auto max-w-[1200px] px-6 py-10">
-        {/* 페이지 제목 + 탭 */}
         <div className="mb-8 flex items-start justify-between">
           <div>
             <h1 className="text-[32px] font-bold tracking-tight text-foreground">
@@ -37,7 +36,6 @@ export function AdminView({ stats, initialCategories, initialTags }: AdminViewPr
             </p>
           </div>
 
-          {/* 탭 버튼 */}
           <div className="flex overflow-hidden rounded-xl border border-border bg-card">
             <button
               onClick={() => setActiveTab("posts")}
@@ -64,14 +62,12 @@ export function AdminView({ stats, initialCategories, initialTags }: AdminViewPr
           </div>
         </div>
 
-        {/* 통계 카드 (포스트 탭에서만) */}
         {activeTab === "posts" && (
           <div className="mb-6">
             <StatsCards stats={stats} />
           </div>
         )}
 
-        {/* 탭 콘텐츠 */}
         {activeTab === "posts" ? (
           <PostTable categories={initialCategories} tags={initialTags} />
         ) : (

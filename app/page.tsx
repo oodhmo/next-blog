@@ -4,17 +4,15 @@ import { PostList } from "@/components/blog/post-list";
 import { getPosts } from "@/lib/actions/post";
 import { getCategories } from "@/lib/actions/category";
 import { POSTS_PER_PAGE } from "@/lib/constants";
-import type { PostSortKey } from "@/types";
+import { parsePostSort } from "@/lib/utils";
 
 type Props = {
   searchParams: Promise<{ sort?: string }>;
 };
 
 export default async function HomePage({ searchParams }: Props) {
-  const { sort = "latest" } = await searchParams;
-  const validSort: PostSortKey = (["latest", "oldest", "views"] as const).includes(sort as PostSortKey)
-    ? (sort as PostSortKey)
-    : "latest";
+  const { sort } = await searchParams;
+  const validSort = parsePostSort(sort);
 
   const [result, categories] = await Promise.all([
     getPosts({ limit: POSTS_PER_PAGE, publishedOnly: true, sort: validSort }),
@@ -34,8 +32,6 @@ export default async function HomePage({ searchParams }: Props) {
             Fullstack Developer · Seoul, KR
           </p>
           <h1 className="mb-6 max-w-[680px] text-[clamp(38px,5vw,58px)] font-bold leading-[1.1] tracking-[-2.5px] [text-wrap:pretty]">
-
-            <br />
             경험 기록
           </h1>
           <p className="max-w-[400px] text-[17px] font-normal leading-[1.75] text-muted-foreground">

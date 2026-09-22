@@ -2,11 +2,10 @@
 
 import { useState, useTransition, useRef, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Search, X } from "lucide-react";
 import { FeaturedPostCard } from "@/components/blog/featured-post-card";
 import { PostCard } from "@/components/blog/post-card";
+import { PostFilterBar } from "@/components/blog/post-filter-bar";
 import { buildCategoryColorMap } from "@/lib/category-colors";
-import { cn } from "@/lib/utils";
 import { getPosts } from "@/lib/actions/post";
 import { POSTS_PER_PAGE } from "@/lib/constants";
 import type { PostWithRelations, PostSortKey } from "@/types";
@@ -20,12 +19,6 @@ type PostListProps = {
   sort: PostSortKey;
 };
 
-const SORT_OPTIONS: { key: PostSortKey; label: string }[] = [
-  { key: "latest", label: "최신순" },
-  { key: "oldest", label: "오래된순" },
-  { key: "views", label: "조회수순" },
-];
-
 export function PostList({ initialPosts, initialHasMore, categories, sort }: PostListProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -34,21 +27,26 @@ export function PostList({ initialPosts, initialHasMore, categories, sort }: Pos
   const [posts, setPosts] = useState(initialPosts);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(initialHasMore);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const isLoadingMoreRef = useRef(false); // IntersectionObserver 중복 호출 방지 (동기 guard)
+  const [isLoadingMore, setIsLoadingMore] = useState(false); // UI 표시용
   const [isResetting, setIsResetting] = useState(false);
 
   // 필터 상태
   const [activeCategory, setActiveCategory] = useState("All");
-  const [inputValue, setInputValue] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const sentinelRef = useRef<HTMLDivElement>(null);
   const colorMap = useMemo(() => buildCategoryColorMap(categories.map((c) => c.name)), [categories]);
+
+  // 진행 중인 요청들 중 "가장 마지막에 시작된" 요청만 결과를 반영하기 위한 세대(generation) 카운터.
+  // 카테고리를 빠르게 전환하거나, loadMore 도중 필터가 바뀌는 경우
+  // 늦게 도착한 이전 요청의 응답이 최신 상태를 덮어쓰는 레이스 컨디션을 막는다.
+  const requestIdRef = useRef(0);
 
   // 필터 변경 시 서버에서 page 1부터 재조회
   const refetch = useCallback(async (category: string, query: string) => {
+    const requestId = ++requestIdRef.current;
     setIsResetting(true);
     const categorySlug = category !== "All"
       ? categories.find((c) => c.name === category)?.slug
@@ -62,6 +60,8 @@ export function PostList({ initialPosts, initialHasMore, categories, sort }: Pos
       search: query.trim() || undefined,
       publishedOnly: true,
     });
+
+    if (requestId !== requestIdRef.current) return; // 그 사이 더 최신 요청이 시작됨 → 이 응답은 폐기
 
     if (result.success) {
       setPosts(result.data.posts);
@@ -77,40 +77,48 @@ export function PostList({ initialPosts, initialHasMore, categories, sort }: Pos
     });
   }
 
-  function openSearch() {
+  const openSearch = useCallback(() => {
     setIsSearchOpen(true);
     setTimeout(() => searchInputRef.current?.focus(), 50);
-  }
+  }, []);
 
-  function handleCategoryChange(cat: string) {
+  // activeCategory/searchQuery를 참조하므로 useCallback으로 감싸 최신 값을
+  // 안정적으로 캡처하고, 아래 Escape 키 effect의 의존성 배열에 안전하게 넣을 수 있게 한다.
+  // (이전에는 effect의 deps에 activeCategory가 빠져 있어, 카테고리를 바꾼 뒤 Escape로
+  // 검색을 닫으면 이전 카테고리로 refetch되는 버그가 있었다.)
+  const closeSearch = useCallback(() => {
+    setIsSearchOpen(false);
+    if (searchQuery.trim()) refetch(activeCategory, "");
+    setSearchQuery("");
+  }, [activeCategory, searchQuery, refetch]);
+
+  const handleCategoryChange = useCallback((cat: string) => {
     setActiveCategory(cat);
     refetch(cat, searchQuery);
-  }
+  }, [searchQuery, refetch]);
 
-  function handleSearch() {
-    setSearchQuery(inputValue);
-    refetch(activeCategory, inputValue);
-  }
+  const handleSearch = useCallback((value: string) => {
+    setSearchQuery(value);
+    refetch(activeCategory, value);
+  }, [activeCategory, refetch]);
 
   // Escape 키로 검색창 닫기
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape" && isSearchOpen) {
-        setIsSearchOpen(false);
-        setInputValue("");
-        if (searchQuery.trim()) {
-          refetch(activeCategory, "");
-        }
-        setSearchQuery("");
+        closeSearch();
       }
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isSearchOpen, searchQuery, activeCategory, refetch]);
+  }, [isSearchOpen, closeSearch]);
 
   // 무한 스크롤: 다음 페이지 로드
   const loadMore = useCallback(async () => {
-    if (isLoadingMore || !hasMore) return;
+    if (isLoadingMoreRef.current || !hasMore) return;
+    // refetch가 이미 새 세대를 시작했다면(필터 전환 등) 이 loadMore는 시작하지 않는다.
+    const requestId = requestIdRef.current;
+    isLoadingMoreRef.current = true;
     setIsLoadingMore(true);
 
     const categorySlug = activeCategory !== "All"
@@ -127,22 +135,34 @@ export function PostList({ initialPosts, initialHasMore, categories, sort }: Pos
       publishedOnly: true,
     });
 
+    isLoadingMoreRef.current = false;
+    setIsLoadingMore(false);
+
+    // 응답을 기다리는 동안 카테고리/검색이 바뀌어 refetch가 새로 시작됐다면
+    // 이 응답은 다른 필터 조건의 결과이므로 목록에 이어붙이지 않는다.
+    if (requestId !== requestIdRef.current) return;
+
     if (result.success) {
       setPosts((prev) => [...prev, ...result.data.posts]);
       setHasMore(result.data.hasMore);
       setPage(nextPage);
     }
-    setIsLoadingMore(false);
-  }, [isLoadingMore, hasMore, page, sort, activeCategory, searchQuery, categories]);
+  }, [hasMore, page, sort, activeCategory, searchQuery, categories]);
 
   // loadMore를 ref에 저장해 stale closure 방지
   const loadMoreRef = useRef(loadMore);
   useEffect(() => { loadMoreRef.current = loadMore; }, [loadMore]);
 
-  // IntersectionObserver로 sentinel 감지
-  useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel) return;
+  // IntersectionObserver로 sentinel 감지.
+  // 콜백 ref를 사용해 sentinel DOM 노드가 (조건부 렌더링으로) 나중에 마운트되더라도
+  // 그 시점에 observer를 다시 연결한다. useEffect(deps=[])로 한 번만 등록하면
+  // 최초 렌더에 sentinel이 없던 경우(포스트 0개 상태) observer가 영영 붙지 않는 문제가 있었다.
+  const observerInstanceRef = useRef<IntersectionObserver | null>(null);
+  const sentinelCallbackRef = useCallback((node: HTMLDivElement | null) => {
+    observerInstanceRef.current?.disconnect();
+    observerInstanceRef.current = null;
+
+    if (!node) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -152,16 +172,12 @@ export function PostList({ initialPosts, initialHasMore, categories, sort }: Pos
       },
       { threshold: 0.1 }
     );
-
-    observer.observe(sentinel);
-    return () => observer.disconnect();
+    observer.observe(node);
+    observerInstanceRef.current = observer;
   }, []);
 
   const [featured, ...rest] = posts;
-
-  const featuredBadge =
-    sort === "views" ? "Most Viewed" : sort === "oldest" ? "Oldest" : "Latest";
-
+  const featuredBadge = sort === "views" ? "Most Viewed" : sort === "oldest" ? "Oldest" : "Latest";
   const isLoading = isResetting || isPending;
 
   if (initialPosts.length === 0 && posts.length === 0) {
@@ -186,95 +202,19 @@ export function PostList({ initialPosts, initialHasMore, categories, sort }: Pos
         </div>
       )}
 
-      {/* 카테고리 필터 + 정렬 버튼 + 검색 */}
-      <div className="border-b border-border pb-11">
-        {/* 검색창 행 */}
-        <div
-          className={cn(
-            "grid transition-all duration-300 ease-in-out",
-            isSearchOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
-          )}
-        >
-          <div className="overflow-hidden">
-            <div className="flex items-center gap-2.5 pb-4">
-              <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
-              <input
-                ref={searchInputRef}
-                type="text"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleSearch();
-                }}
-                placeholder="포스트 검색 후 Enter..."
-                className="flex-1 bg-transparent font-mono text-[13px] text-foreground outline-none placeholder:text-muted-foreground"
-              />
-              <button
-                onClick={() => {
-                  setIsSearchOpen(false);
-                  setInputValue("");
-                  if (searchQuery.trim()) refetch(activeCategory, "");
-                  setSearchQuery("");
-                }}
-                className="rounded-full p-1 text-muted-foreground transition-colors hover:text-foreground"
-                aria-label="검색 닫기"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* 카테고리+정렬 행 */}
-        <div className="flex flex-wrap items-center justify-between gap-y-3">
-          {/* 좌측: 카테고리 필터 */}
-          <div className="flex flex-wrap gap-2">
-            {["All", ...categories.map((c) => c.name)].map((cat) => (
-              <button
-                key={cat}
-                onClick={() => handleCategoryChange(cat)}
-                className={cn(
-                  "rounded-full border px-[18px] py-2 text-[13px] font-medium transition-all duration-[180ms] hover:scale-[1.04]",
-                  activeCategory === cat
-                    ? "border-primary bg-primary text-white"
-                    : "border-border bg-transparent text-muted-foreground hover:border-foreground/30 hover:text-foreground"
-                )}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-
-          {/* 우측: 정렬 버튼 + 검색 아이콘 */}
-          <div className="flex shrink-0 items-center gap-1">
-            {SORT_OPTIONS.map(({ key, label }) => (
-              <button
-                key={key}
-                onClick={() => handleSortChange(key)}
-                aria-pressed={sort === key}
-                disabled={isPending}
-                className={cn(
-                  "rounded-full px-3 py-1.5 font-mono text-[12px] font-medium transition-all duration-[180ms]",
-                  sort === key
-                    ? "bg-foreground/8 text-foreground"
-                    : "text-muted-foreground hover:text-foreground",
-                  isPending && "opacity-50"
-                )}
-              >
-                {label}
-              </button>
-            ))}
-            <div className="mx-1.5 h-4 w-px bg-border" />
-            <button
-              onClick={openSearch}
-              className="rounded-full p-1.5 text-muted-foreground transition-colors hover:text-foreground"
-              aria-label="검색"
-            >
-              <Search className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      </div>
+      <PostFilterBar
+        categories={categories}
+        activeCategory={activeCategory}
+        sort={sort}
+        isSearchOpen={isSearchOpen}
+        isPending={isPending}
+        searchInputRef={searchInputRef}
+        onCategoryChange={handleCategoryChange}
+        onSortChange={handleSortChange}
+        onSearchOpen={openSearch}
+        onSearchClose={closeSearch}
+        onSearchSubmit={handleSearch}
+      />
 
       {/* 포스트 수 */}
       <div className="flex items-center gap-4 py-6">
@@ -307,7 +247,7 @@ export function PostList({ initialPosts, initialHasMore, categories, sort }: Pos
       )}
 
       {/* 무한 스크롤 sentinel + 하단 상태 표시 */}
-      <div ref={sentinelRef} className="flex h-16 items-center justify-center">
+      <div ref={sentinelCallbackRef} className="flex h-16 items-center justify-center">
         {isLoadingMore && (
           <div className="flex items-center gap-2">
             <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-primary border-t-transparent" />

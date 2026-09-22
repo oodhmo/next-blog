@@ -125,6 +125,7 @@ export function CategoryManager({ initialCategories }: CategoryManagerProps) {
           <div className="grid grid-cols-[1fr_120px_80px_80px] items-center gap-2 border-b border-border px-5 py-3 bg-muted/20">
             <Input
               placeholder="카테고리 이름"
+              aria-label="새 카테고리 이름"
               value={newName}
               onChange={(e) => handleNewNameChange(e.target.value)}
               className="h-8 text-[13px]"
@@ -133,6 +134,7 @@ export function CategoryManager({ initialCategories }: CategoryManagerProps) {
             />
             <Input
               placeholder="slug"
+              aria-label="새 카테고리 슬러그"
               value={newSlug}
               onChange={(e) => setNewSlug(e.target.value)}
               className="h-8 font-mono text-[12px]"
@@ -142,12 +144,14 @@ export function CategoryManager({ initialCategories }: CategoryManagerProps) {
               <button
                 onClick={handleCreate}
                 disabled={isPending || !newName || !newSlug}
+                aria-label="카테고리 생성 확인"
                 className="flex h-7 w-7 items-center justify-center rounded-lg text-primary transition-colors hover:bg-primary/10 disabled:opacity-40"
               >
                 <Check className="h-3.5 w-3.5" />
               </button>
               <button
                 onClick={() => { setIsCreating(false); setNewName(""); setNewSlug(""); }}
+                aria-label="카테고리 생성 취소"
                 className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary"
               >
                 <X className="h-3.5 w-3.5" />
@@ -173,6 +177,7 @@ export function CategoryManager({ initialCategories }: CategoryManagerProps) {
                 <>
                   <Input
                     value={editName}
+                    aria-label="카테고리 이름 수정"
                     onChange={(e) => setEditName(e.target.value)}
                     className="h-8 text-[13px]"
                     autoFocus
@@ -180,6 +185,7 @@ export function CategoryManager({ initialCategories }: CategoryManagerProps) {
                   />
                   <Input
                     value={editSlug}
+                    aria-label="카테고리 슬러그 수정"
                     onChange={(e) => setEditSlug(e.target.value)}
                     className="h-8 font-mono text-[12px]"
                   />
@@ -188,12 +194,14 @@ export function CategoryManager({ initialCategories }: CategoryManagerProps) {
                     <button
                       onClick={() => handleEditSave(cat)}
                       disabled={isPending}
+                      aria-label="카테고리 수정 확인"
                       className="flex h-7 w-7 items-center justify-center rounded-lg text-primary transition-colors hover:bg-primary/10 disabled:opacity-40"
                     >
                       <Check className="h-3.5 w-3.5" />
                     </button>
                     <button
                       onClick={() => setEditingId(null)}
+                      aria-label="카테고리 수정 취소"
                       className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary"
                     >
                       <X className="h-3.5 w-3.5" />
@@ -210,12 +218,14 @@ export function CategoryManager({ initialCategories }: CategoryManagerProps) {
                   <div className="flex items-center justify-end gap-1">
                     <button
                       onClick={() => handleEditStart(cat)}
+                      aria-label={`"${cat.name}" 수정`}
                       className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </button>
                     <button
                       onClick={() => setDeleteTarget(cat)}
+                      aria-label={`"${cat.name}" 삭제`}
                       className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
                     >
                       <Trash2 className="h-3.5 w-3.5" />

@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# 디자인 목업 (Claude Artifacts 시안, 소스에서 참조되지 않음 — 실수로 커밋되지 않도록)
+dvlog*.dc.html

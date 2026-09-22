@@ -23,6 +23,17 @@ const HANDLES: HandlePosition[] = [
   "bottom-left", "bottom-center", "bottom-right",
 ];
 
+const HANDLE_LABELS: Record<HandlePosition, string> = {
+  "top-left": "왼쪽 위",
+  "top-center": "위",
+  "top-right": "오른쪽 위",
+  "middle-left": "왼쪽",
+  "middle-right": "오른쪽",
+  "bottom-left": "왼쪽 아래",
+  "bottom-center": "아래",
+  "bottom-right": "오른쪽 아래",
+};
+
 function getHandleStyle(handle: HandlePosition): React.CSSProperties {
   const base: React.CSSProperties = {
     position: "absolute",
@@ -137,6 +148,52 @@ export function ResizableImageView({ node, updateAttributes, selected }: NodeVie
     [updateAttributes]
   );
 
+  // 마우스 드래그와 동일한 리사이즈를 방향키로도 할 수 있게 한다
+  // (기존에는 핸들이 aria-hidden + onMouseDown만 있어 키보드로는 크기 조절이 불가능했다).
+  const onHandleKeyDown = useCallback(
+    (e: React.KeyboardEvent, handle: HandlePosition) => {
+      const step = e.shiftKey ? 20 : 8;
+      let dx = 0;
+      let dy = 0;
+      switch (e.key) {
+        case "ArrowLeft": dx = -step; break;
+        case "ArrowRight": dx = step; break;
+        case "ArrowUp": dy = -step; break;
+        case "ArrowDown": dy = step; break;
+        default: return;
+      }
+      e.preventDefault();
+
+      const img = imgRef.current;
+      if (!img) return;
+      const rect = img.getBoundingClientRect();
+      const startW = rect.width;
+      const startH = rect.height;
+      const aspectRatio = startW / startH;
+
+      if (handle === "top-center" || handle === "bottom-center") {
+        const newH = Math.max(
+          MIN_SIZE,
+          Math.round(handle === "bottom-center" ? startH + dy : startH - dy)
+        );
+        updateAttributes({ height: newH });
+        return;
+      }
+
+      let newW = Math.round(handle.includes("right") ? startW + dx : startW - dx);
+      newW = Math.min(MAX_WIDTH, Math.max(MIN_SIZE, newW));
+
+      if (handle === "middle-left" || handle === "middle-right") {
+        updateAttributes({ width: newW });
+        return;
+      }
+
+      const newH = Math.round(newW / aspectRatio);
+      updateAttributes({ width: newW, height: newH });
+    },
+    [updateAttributes]
+  );
+
   return (
     <NodeViewWrapper
       as="div"
@@ -147,6 +204,10 @@ export function ResizableImageView({ node, updateAttributes, selected }: NodeVie
         margin: "0.5rem 0",
       }}
     >
+      {/* eslint-disable-next-line @next/next/no-img-element --
+          TipTap NodeView: naturalWidth/Height 측정 + 드래그 리사이즈가 필요해
+          next/image로 대체할 수 없다(고정 크기 사전 지정을 요구해 편집 중 자유
+          리사이즈와 충돌). 관리자 전용 에디터 화면이라 LCP 영향도 없다. */}
       <img
         ref={imgRef}
         src={src}
@@ -174,12 +235,16 @@ export function ResizableImageView({ node, updateAttributes, selected }: NodeVie
               pointerEvents: "none",
             }}
           />
-          {/* 리사이즈 핸들 8개 */}
+          {/* 리사이즈 핸들 8개 — 마우스 드래그 + 방향키(±8px, Shift+±20px) 둘 다 지원 */}
           {HANDLES.map((handle) => (
             <span
               key={handle}
-              aria-hidden
+              role="slider"
+              tabIndex={0}
+              aria-label={`이미지 크기 조절 (${HANDLE_LABELS[handle]})`}
+              aria-valuenow={width ?? undefined}
               onMouseDown={(e) => onMouseDown(e, handle)}
+              onKeyDown={(e) => onHandleKeyDown(e, handle)}
               style={getHandleStyle(handle)}
             />
           ))}

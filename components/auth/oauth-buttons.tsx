@@ -49,9 +49,13 @@ const providers: { id: Provider; label: string; icon: React.ReactNode; bg?: stri
   // { id: "kakao", label: "Kakao로 로그인", icon: <KakaoIcon />, bg: "#FEE500" },
 ]
 
-export function OAuthButtons() {
+type Props = {
+  redirectTo?: string
+}
+
+export function OAuthButtons({ redirectTo }: Props) {
   function handleSignIn(provider: Provider) {
-    signIn(provider, { redirectTo: window.location.href })
+    signIn(provider, { redirectTo: redirectTo ?? window.location.href })
   }
 
   return (

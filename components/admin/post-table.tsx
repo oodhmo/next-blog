@@ -28,7 +28,7 @@ import type { AdminCategory, AdminTag } from "@/lib/actions/category";
 import { useDebounce } from "@/hooks/use-debounce";
 import { cn } from "@/lib/utils";
 
-const POSTS_PER_PAGE = 6;
+const ADMIN_PAGE_SIZE = 6;
 
 type PublishedFilter = "all" | "published" | "unpublished";
 type SortKey = "latest" | "views" | "updatedAt";
@@ -59,7 +59,7 @@ export function PostTable({ categories, tags }: PostTableProps) {
     startTransition(async () => {
       const result = await getAdminPosts({
         page,
-        limit: POSTS_PER_PAGE,
+        limit: ADMIN_PAGE_SIZE,
         search: debouncedSearch || undefined,
         categorySlug: categoryFilter !== "all" ? categoryFilter : undefined,
         tagSlug: tagFilter !== "all" ? tagFilter : undefined,
@@ -75,14 +75,39 @@ export function PostTable({ categories, tags }: PostTableProps) {
     });
   }, [page, debouncedSearch, categoryFilter, tagFilter, publishedFilter, sort]);
 
+  // fetchPosts는 page를 포함한 모든 필터를 의존성으로 갖는다. 필터가 바뀔 때
+  // 페이지를 1로 리셋하는 것은 각 필터 변경 핸들러(아래)에서 setPage(1)을
+  // 함께 호출하는 방식으로 처리한다. 예전에는 별도 effect로 setPage(1)을
+  // 호출했는데, 그러면 필터 변경 1회당 (이전 page로) fetchPosts가 한 번,
+  // page가 1로 바뀌어 다시 한 번 — 총 두 번 서버 액션이 호출됐다.
   useEffect(() => {
     fetchPosts();
   }, [fetchPosts]);
 
-  // 검색/필터 변경 시 페이지 초기화
-  useEffect(() => {
+  function handleSearchChange(value: string) {
+    setSearch(value);
     setPage(1);
-  }, [debouncedSearch, categoryFilter, tagFilter, publishedFilter, sort]);
+  }
+
+  function handleCategoryFilterChange(value: string) {
+    setCategoryFilter(value);
+    setPage(1);
+  }
+
+  function handleTagFilterChange(value: string) {
+    setTagFilter(value);
+    setPage(1);
+  }
+
+  function handlePublishedFilterChange(value: PublishedFilter) {
+    setPublishedFilter(value);
+    setPage(1);
+  }
+
+  function handleSortChange(value: SortKey) {
+    setSort(value);
+    setPage(1);
+  }
 
   function handleSelectAll(checked: boolean) {
     setSelectedIds(checked ? posts.map((p) => p.id) : []);
@@ -126,12 +151,6 @@ export function PostTable({ categories, tags }: PostTableProps) {
     setIsBulkDeleteOpen(false);
   }
 
-  const publishedCounts = {
-    all: total,
-    published: posts.filter((p) => p.published).length,
-    unpublished: posts.filter((p) => !p.published).length,
-  };
-
   return (
     <div className="space-y-4">
       {/* 검색 + 필터 */}
@@ -140,12 +159,13 @@ export function PostTable({ categories, tags }: PostTableProps) {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="포스트 제목 검색..."
+            aria-label="포스트 제목 검색"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className="pl-9"
           />
         </div>
-        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+        <Select value={categoryFilter} onValueChange={handleCategoryFilterChange}>
           <SelectTrigger className="w-[148px]">
             <SelectValue placeholder="모든 카테고리" />
           </SelectTrigger>
@@ -158,7 +178,7 @@ export function PostTable({ categories, tags }: PostTableProps) {
             ))}
           </SelectContent>
         </Select>
-        <Select value={tagFilter} onValueChange={setTagFilter}>
+        <Select value={tagFilter} onValueChange={handleTagFilterChange}>
           <SelectTrigger className="w-[130px]">
             <SelectValue placeholder="모든 태그" />
           </SelectTrigger>
@@ -171,7 +191,7 @@ export function PostTable({ categories, tags }: PostTableProps) {
             ))}
           </SelectContent>
         </Select>
-        <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
+        <Select value={sort} onValueChange={(v) => handleSortChange(v as SortKey)}>
           <SelectTrigger className="w-[120px]">
             <SelectValue />
           </SelectTrigger>
@@ -188,11 +208,10 @@ export function PostTable({ categories, tags }: PostTableProps) {
         <div className="flex items-center gap-1.5">
           {(["all", "published", "unpublished"] as const).map((filter) => {
             const labels = { all: "전체", published: "공개", unpublished: "비공개" };
-            const count = { all: total, published: 0, unpublished: 0 }; // 서버에서 전체 수만 알 수 있음
             return (
               <button
                 key={filter}
-                onClick={() => setPublishedFilter(filter)}
+                onClick={() => handlePublishedFilterChange(filter)}
                 className={cn(
                   "rounded-full px-4 py-1.5 text-[13px] font-medium transition-all",
                   publishedFilter === filter
@@ -243,6 +262,7 @@ export function PostTable({ categories, tags }: PostTableProps) {
           <Checkbox
             checked={selectedIds.length === posts.length && posts.length > 0}
             onCheckedChange={(c) => handleSelectAll(!!c)}
+            aria-label="전체 선택"
           />
           <span className="text-[13px] font-medium text-muted-foreground">제목</span>
           <span className="text-[13px] font-medium text-muted-foreground">카테고리</span>
@@ -269,6 +289,7 @@ export function PostTable({ categories, tags }: PostTableProps) {
               <Checkbox
                 checked={selectedIds.includes(post.id)}
                 onCheckedChange={(c) => handleSelectOne(post.id, !!c)}
+                aria-label={`"${post.title}" 선택`}
               />
 
               {/* 제목 + 태그 */}
@@ -326,12 +347,14 @@ export function PostTable({ categories, tags }: PostTableProps) {
               <div className="flex items-center justify-end gap-1">
                 <Link
                   href={`/studio-sy/editor/${post.id}`}
+                  aria-label={`"${post.title}" 수정`}
                   className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                 >
                   <Pencil className="h-3.5 w-3.5" />
                 </Link>
                 <button
                   onClick={() => setDeleteTarget(post)}
+                  aria-label={`"${post.title}" 삭제`}
                   className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
@@ -346,12 +369,13 @@ export function PostTable({ categories, tags }: PostTableProps) {
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
           <p className="font-mono text-[13px] text-muted-foreground">
-            {(page - 1) * POSTS_PER_PAGE + 1}-{Math.min(page * POSTS_PER_PAGE, total)} / {total}
+            {(page - 1) * ADMIN_PAGE_SIZE + 1}-{Math.min(page * ADMIN_PAGE_SIZE, total)} / {total}
           </p>
           <div className="flex items-center gap-1">
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
+              aria-label="이전 페이지"
               className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:opacity-40"
             >
               <ChevronLeft className="h-4 w-4" />
@@ -386,6 +410,7 @@ export function PostTable({ categories, tags }: PostTableProps) {
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
+              aria-label="다음 페이지"
               className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:opacity-40"
             >
               <ChevronRight className="h-4 w-4" />

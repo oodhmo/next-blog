@@ -117,6 +117,7 @@ export function EditorToolbar({ editor, slug }: EditorToolbarProps) {
         onClick={() => editor?.chain().focus().toggleBold().run()}
         className={cn(btn(editor?.isActive("bold") ?? false), "w-7")}
         title="Bold"
+        aria-label="굵게"
       >
         <Bold className="h-3.5 w-3.5 stroke-[2.5]" />
       </button>
@@ -125,6 +126,7 @@ export function EditorToolbar({ editor, slug }: EditorToolbarProps) {
         onClick={() => editor?.chain().focus().toggleItalic().run()}
         className={cn(btn(editor?.isActive("italic") ?? false), "w-7")}
         title="Italic"
+        aria-label="기울임"
       >
         <Italic className="h-3.5 w-3.5" />
       </button>
@@ -137,6 +139,7 @@ export function EditorToolbar({ editor, slug }: EditorToolbarProps) {
         onClick={() => editor?.chain().focus().toggleCode().run()}
         className={cn(btn(editor?.isActive("code") ?? false), "w-7")}
         title="인라인 코드"
+        aria-label="인라인 코드"
       >
         <Code className="h-3.5 w-3.5" />
       </button>
@@ -145,6 +148,7 @@ export function EditorToolbar({ editor, slug }: EditorToolbarProps) {
         onClick={() => editor?.chain().focus().toggleCodeBlock().run()}
         className={cn(btn(editor?.isActive("codeBlock") ?? false), "w-7")}
         title="코드 블록"
+        aria-label="코드 블록"
       >
         <FileCode className="h-3.5 w-3.5" />
       </button>
@@ -157,6 +161,7 @@ export function EditorToolbar({ editor, slug }: EditorToolbarProps) {
         onClick={handleLinkInsert}
         className={cn(btn(editor?.isActive("link") ?? false), "w-7")}
         title="링크"
+        aria-label="링크 삽입"
       >
         <Link className="h-3.5 w-3.5" />
       </button>
@@ -165,6 +170,7 @@ export function EditorToolbar({ editor, slug }: EditorToolbarProps) {
         onClick={() => editor?.chain().focus().toggleBlockquote().run()}
         className={cn(btn(editor?.isActive("blockquote") ?? false), "w-7")}
         title="인용구"
+        aria-label="인용구"
       >
         <Quote className="h-3.5 w-3.5" />
       </button>
@@ -174,10 +180,15 @@ export function EditorToolbar({ editor, slug }: EditorToolbarProps) {
         disabled={isUploading || !editor}
         className={cn(btn(false), "w-7", (isUploading || !editor) && "cursor-not-allowed opacity-50")}
         title={isUploading ? "업로드 중..." : "이미지 삽입"}
+        aria-label={isUploading ? "업로드 중" : "이미지 삽입"}
       >
         {isUploading ? (
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
         ) : (
+          // lucide-react의 아이콘 컴포넌트로 실제 <img>가 아니다. jsx-a11y/alt-text가
+          // 태그명("Image")만 보고 오탐하며, LucideProps에 alt가 없어 prop으로는
+          // 규칙을 만족시킬 수 없다. 버튼에 이미 aria-label이 있어 장식용으로 안전하다.
+          // eslint-disable-next-line jsx-a11y/alt-text
           <Image className="h-3.5 w-3.5" />
         )}
       </button>

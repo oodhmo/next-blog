@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import NextLink from "next/link";
 import { format } from "date-fns";
@@ -62,7 +62,8 @@ export function PostEditorPage({ categories, post, initialComments, initialEdito
 
   const [comments, setComments] = useState<CommentWithUser[]>(initialComments ?? []);
 
-  const stats = computeEditorStats(editorText);
+  // editorText는 타이핑마다 바뀌므로, 매 렌더마다 다시 계산하지 않도록 memo한다.
+  const stats = useMemo(() => computeEditorStats(editorText), [editorText]);
   const slug = isEditMode ? post.slug : (generateSlug(title) || "untitled");
 
   const handleEditorChange = useCallback((text: string) => {
@@ -149,6 +150,7 @@ export function PostEditorPage({ categories, post, initialComments, initialEdito
       <header className="z-50 flex h-14 flex-shrink-0 items-center gap-3 border-b border-border bg-background/90 px-5 backdrop-blur-xl">
         <NextLink
           href="/studio-sy"
+          aria-label="목록으로 돌아가기"
           className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:border-primary hover:text-foreground"
         >
           <ChevronLeft className="h-3.5 w-3.5" />
@@ -168,6 +170,7 @@ export function PostEditorPage({ categories, post, initialComments, initialEdito
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="제목을 입력하세요"
+          aria-label="포스트 제목"
           className="min-w-0 flex-1 bg-transparent text-center text-[15px] font-semibold text-foreground outline-none placeholder:text-muted-foreground/45"
         />
 
@@ -267,6 +270,7 @@ export function PostEditorPage({ categories, post, initialComments, initialEdito
                     <button
                       type="button"
                       onClick={() => removeTag(tag)}
+                      aria-label={`"${tag}" 태그 삭제`}
                       className="flex h-3 w-3 items-center justify-center opacity-60 hover:opacity-100"
                     >
                       <X className="h-2 w-2" />
@@ -280,6 +284,7 @@ export function PostEditorPage({ categories, post, initialComments, initialEdito
               onChange={(e) => setTagInput(e.target.value)}
               onKeyDown={handleTagKeyDown}
               placeholder="태그 입력 후 Enter"
+              aria-label="태그 입력"
               className="h-8 font-mono text-[11.5px]"
             />
           </div>
@@ -293,6 +298,7 @@ export function PostEditorPage({ categories, post, initialComments, initialEdito
               value={excerpt}
               onChange={(e) => setExcerpt(e.target.value)}
               placeholder="포스트 요약 (목록에 표시됩니다)"
+              aria-label="포스트 요약"
               rows={4}
               className="block w-full resize-y rounded-lg border border-border bg-input p-2.5 font-sans text-[12.5px] leading-[1.65] text-foreground outline-none placeholder:text-muted-foreground/45 focus:border-primary"
             />
@@ -390,6 +396,7 @@ export function PostEditorPage({ categories, post, initialComments, initialEdito
                           onClick={() => handleDeleteComment(comment.id)}
                           className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
                           title="댓글 삭제"
+                          aria-label="댓글 삭제"
                         >
                           <Trash2 className="h-3 w-3" />
                         </button>

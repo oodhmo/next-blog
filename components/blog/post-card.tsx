@@ -2,8 +2,8 @@ import Link from "next/link";
 import { Eye } from "lucide-react";
 import { formatDateSimple, formatViewCount, estimateReadTime } from "@/lib/utils";
 import type { CategoryColor } from "@/lib/category-colors";
-import { cn } from "@/lib/utils";
 import type { PostWithRelations } from "@/types";
+import { CategoryBadge } from "@/components/blog/category-badge";
 
 type PostCardProps = {
   post: PostWithRelations;
@@ -11,7 +11,8 @@ type PostCardProps = {
 };
 
 export function PostCard({ post, colorMap }: PostCardProps) {
-  const readTime = estimateReadTime(post.content);
+  // 목록 조회(getPosts)는 응답 크기를 줄이려고 content 대신 readTime을 미리 계산해서 내려준다.
+  const readTime = post.readTime ?? estimateReadTime(post.content);
   const firstCategory = post.categories[0]?.category;
 
   return (
@@ -21,15 +22,7 @@ export function PostCard({ post, colorMap }: PostCardProps) {
         {/* 상단: 카테고리 + 읽기 시간 */}
         <div className="mb-[17px] flex items-center justify-between">
           {firstCategory ? (
-            <span
-              className="rounded-full border font-mono text-[10px] font-medium uppercase tracking-[1.5px] px-2.5 py-1"
-              style={(() => {
-                const c = colorMap[firstCategory.name];
-                return c ? { color: c.text, background: c.bg, borderColor: c.border } : {};
-              })()}
-            >
-              {firstCategory.name}
-            </span>
+            <CategoryBadge name={firstCategory.name} colorMap={colorMap} />
           ) : (
             <span />
           )}

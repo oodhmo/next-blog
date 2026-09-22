@@ -6,7 +6,8 @@
       "Bash(npm install *)",
       "Bash(npx shadcn@latest add popover calendar --yes)",
       "Bash(npx tsc *)",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(npx eslint *)"
     ],
     "deny": [
       "Read(./.env)",

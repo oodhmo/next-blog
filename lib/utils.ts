@@ -30,12 +30,6 @@ export function formatViewCount(count: number): string {
   return String(count);
 }
 
-// 텍스트 자르기
-export function truncate(text: string, maxLength = 150): string {
-  if (text.length <= maxLength) return text;
-  return text.slice(0, maxLength).trimEnd() + "...";
-}
-
 // 읽기 시간 추정 (분)
 export function estimateReadTime(content: string, wordsPerMinute = 200): number {
   const plainText = content.replace(/<[^>]*>/g, " ");
@@ -51,10 +45,14 @@ export function generateSlug(title: string): string {
     .replace(/[^a-z0-9\s-]/g, "")
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-")
-    .trim();
+    .replace(/^-+|-+$/g, ""); // 한글만 앞/뒤에 있던 경우 공백이 하이픈으로 남는 것 제거 (예: "안녕 Hello" → "-hello" 방지)
 }
 
-// null/undefined 체크
-export function isNullish(value: unknown): value is null | undefined {
-  return value === null || value === undefined;
+// sort 쿼리 파라미터 파싱 및 검증
+import type { PostSortKey } from "@/types";
+const VALID_SORT_KEYS = ["latest", "oldest", "views"] as const satisfies readonly PostSortKey[];
+export function parsePostSort(sort: string | undefined): PostSortKey {
+  return (VALID_SORT_KEYS as readonly string[]).includes(sort ?? "")
+    ? (sort as PostSortKey)
+    : "latest";
 }

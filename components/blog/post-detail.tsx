@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { formatDate, estimateReadTime } from "@/lib/utils";
 import { highlightCodeBlocks } from "@/lib/highlight";
+import { sanitizePostHtml } from "@/lib/sanitize";
 import { replaceKeysWithPresignedUrls } from "@/lib/s3";
 import { Clock, Eye, Calendar } from "lucide-react";
 import { CommentsSection } from "@/components/blog/comments-section";
@@ -89,7 +90,7 @@ export async function PostDetail({ post }: PostDetailProps) {
       {/* 본문 */}
       <div
         className="post-content max-w-none"
-        dangerouslySetInnerHTML={{ __html: highlightCodeBlocks(content) }}
+        dangerouslySetInnerHTML={{ __html: sanitizePostHtml(highlightCodeBlocks(content)) }}
       />
 
       {/* 태그 */}

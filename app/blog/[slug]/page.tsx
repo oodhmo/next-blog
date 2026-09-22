@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { PostDetail } from "@/components/blog/post-detail";
-import { getPostBySlug } from "@/lib/actions/post";
+import { getPostBySlugCached as getPostBySlug } from "@/lib/cached-queries";
 
 // Next.js 15: params는 Promise
 type Props = {

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { PostEditorPage } from "@/components/admin/PostEditorPage";
-import { getPostById } from "@/lib/actions/post";
+import { getPostByIdCached as getPostById } from "@/lib/cached-queries";
 import { getAllCategories } from "@/lib/actions/category";
 import { getComments } from "@/lib/actions/comment";
 import { replaceKeysWithPresignedUrlsForEditor } from "@/lib/s3";

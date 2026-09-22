@@ -90,6 +90,7 @@ export function CommentForm({ postId }: Props) {
           placeholder={
             isLoggedIn ? "댓글을 작성해주세요..." : "로그인 후 댓글을 작성할 수 있어요"
           }
+          aria-label="댓글 내용"
           rows={3}
           maxLength={1000}
           className="w-full rounded-lg border border-border bg-white dark:bg-[#131328] text-foreground dark:text-white px-3 py-2.5 text-sm font-sans leading-relaxed resize-none transition-colors placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 disabled:cursor-not-allowed disabled:opacity-50"

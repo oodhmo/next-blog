@@ -5,7 +5,7 @@ import { PostList } from "@/components/blog/post-list";
 import { getPosts } from "@/lib/actions/post";
 import { getCategories } from "@/lib/actions/category";
 import { POSTS_PER_PAGE } from "@/lib/constants";
-import type { PostSortKey } from "@/types";
+import { parsePostSort } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "블로그",
@@ -17,10 +17,8 @@ type Props = {
 };
 
 export default async function BlogPage({ searchParams }: Props) {
-  const { sort = "latest" } = await searchParams;
-  const validSort: PostSortKey = (["latest", "oldest", "views"] as const).includes(sort as PostSortKey)
-    ? (sort as PostSortKey)
-    : "latest";
+  const { sort } = await searchParams;
+  const validSort = parsePostSort(sort);
 
   const [result, categories] = await Promise.all([
     getPosts({ publishedOnly: true, limit: POSTS_PER_PAGE, sort: validSort }),

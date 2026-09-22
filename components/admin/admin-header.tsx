@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -15,7 +13,7 @@ export function AdminHeader() {
             href="/studio-sy"
             className="font-mono text-[18px] font-medium tracking-[-0.5px] transition-opacity hover:opacity-60"
           >
-            dvlog<span className="blink-cursor">_</span>
+            sylog<span className="blink-cursor">_</span>
           </Link>
           <span className="rounded-md bg-secondary px-2 py-0.5 font-mono text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
             ADMIN

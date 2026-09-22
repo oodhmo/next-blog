@@ -3,6 +3,7 @@ import { Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import { Providers } from "@/components/providers";
 import { Toaster } from "@/components/ui/sonner";
 import NextTopLoader from "nextjs-toploader";
+import { SITE_DESCRIPTION } from "@/lib/constants";
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({
@@ -22,13 +23,13 @@ export const metadata: Metadata = {
     default: "dvlog_",
     template: "%s | dvlog_",
   },
-  description: "프론트엔드 개발 경험, 삽질 기록, 그리고 가끔 딴 생각들.",
+  description: SITE_DESCRIPTION,
   keywords: ["Next.js", "TypeScript", "TailwindCSS", "Blog"],
   openGraph: {
     type: "website",
     locale: "ko_KR",
     title: "dvlog_",
-    description: "프론트엔드 개발 경험, 삽질 기록, 그리고 가끔 딴 생각들.",
+    description: SITE_DESCRIPTION,
     siteName: "dvlog_",
   },
 };
