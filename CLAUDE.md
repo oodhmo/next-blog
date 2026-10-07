@@ -69,5 +69,6 @@ content/                  # MDX 또는 마크다운 포스트 파일
 
 ```
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
-NEXT_PUBLIC_SITE_NAME=Next Blog
 ```
+
+사이트 이름은 환경 변수가 아닌 `lib/constants.ts`의 `SITE_NAME_BASE`에서 관리한다. 하드코딩하지 말고 `SITE_NAME`(메타데이터, 텍스트) 또는 `SITE_NAME_BASE`(커서가 붙는 로고)를 사용한다.

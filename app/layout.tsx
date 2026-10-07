@@ -3,7 +3,7 @@ import { Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import { Providers } from "@/components/providers";
 import { Toaster } from "@/components/ui/sonner";
 import NextTopLoader from "nextjs-toploader";
-import { SITE_DESCRIPTION } from "@/lib/constants";
+import { SITE_DESCRIPTION, SITE_NAME } from "@/lib/constants";
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({
@@ -20,17 +20,17 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "dvlog_",
-    template: "%s | dvlog_",
+    default: SITE_NAME,
+    template: `%s | ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
   keywords: ["Next.js", "TypeScript", "TailwindCSS", "Blog"],
   openGraph: {
     type: "website",
     locale: "ko_KR",
-    title: "dvlog_",
+    title: SITE_NAME,
     description: SITE_DESCRIPTION,
-    siteName: "dvlog_",
+    siteName: SITE_NAME,
   },
 };
 

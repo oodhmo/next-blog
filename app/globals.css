@@ -31,7 +31,7 @@
   --font-mono: var(--font-jetbrains-mono);
 }
 
-/* ===== 라이트 모드: dvlog 팔레트 ===== */
+/* ===== 라이트 모드: 사이트 팔레트 ===== */
 :root {
   --radius: 1.125rem;
 
@@ -63,7 +63,7 @@
   --ring: oklch(62% 0.22 255);
 }
 
-/* ===== 다크 모드: dvlog 팔레트 ===== */
+/* ===== 다크 모드: 사이트 팔레트 ===== */
 .dark {
   --background: #0D0D12;
   --foreground: #E8E8F2;

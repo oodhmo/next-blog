@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
+import { SITE_NAME_BASE } from "@/lib/constants";
 
 export function AdminHeader() {
   return (
@@ -13,7 +14,7 @@ export function AdminHeader() {
             href="/studio-sy"
             className="font-mono text-[18px] font-medium tracking-[-0.5px] transition-opacity hover:opacity-60"
           >
-            sylog<span className="blink-cursor">_</span>
+            {SITE_NAME_BASE}<span className="blink-cursor">_</span>
           </Link>
           <span className="rounded-md bg-secondary px-2 py-0.5 font-mono text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
             ADMIN

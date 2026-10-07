@@ -1,3 +1,5 @@
+import { SITE_NAME } from "@/lib/constants";
+
 export function Footer() {
   const currentYear = new Date().getFullYear();
 
@@ -5,7 +7,7 @@ export function Footer() {
     <footer className="w-full border-t border-border">
       <div className="page-container py-7">
         <div className="flex items-center justify-between font-mono text-[11px] text-muted-foreground">
-          <span>dvlog_ © {currentYear}</span>
+          <span>{SITE_NAME} © {currentYear}</span>
           <span>built with ☕ &amp; curiosity</span>
         </div>
       </div>

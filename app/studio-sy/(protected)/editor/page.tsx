@@ -2,7 +2,7 @@ import { PostEditorPage } from "@/components/admin/PostEditorPage";
 import { getAllCategories } from "@/lib/actions/category";
 
 export const metadata = {
-  title: "새 글 작성 | dvlog admin",
+  title: "새 글 작성 | admin",
 };
 
 export default async function EditorPage() {

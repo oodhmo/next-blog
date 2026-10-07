@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { ScrollProgressBar } from "@/components/blog/scroll-progress-bar";
-import { NAV_LINKS } from "@/lib/constants";
+import { NAV_LINKS, SITE_NAME_BASE } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 export function Header() {
@@ -14,12 +14,12 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/86 backdrop-blur-xl">
       <div className="relative page-container flex h-[62px] items-center justify-between">
-        {/* 로고 — dvlog_ (커서 깜빡임) */}
+        {/* 로고 — 사이트 이름 + 깜빡이는 커서 */}
         <Link
           href="/"
           className="font-mono text-[18px] font-medium tracking-[-0.5px] transition-opacity hover:opacity-60"
         >
-          dvlog<span className="blink-cursor">_</span>
+          {SITE_NAME_BASE}<span className="blink-cursor">_</span>
         </Link>
 
         {/* 헤더 중앙 진행바 — 포스트 페이지에서만 표시. 스크롤 상태는 이 안에서만 갖는다. */}

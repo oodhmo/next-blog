@@ -13,7 +13,7 @@ export async function generateMetadata({ params }: Props) {
   const { id } = await params;
   const result = await getPostById(Number(id));
   const title = result.success ? result.data.title : "포스트 수정";
-  return { title: `${title} 수정 | dvlog admin` };
+  return { title: `${title} 수정 | admin` };
 }
 
 export default async function EditorEditPage({ params }: Props) {

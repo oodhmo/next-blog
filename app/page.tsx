@@ -3,7 +3,7 @@ import { Footer } from "@/components/layout/footer";
 import { PostList } from "@/components/blog/post-list";
 import { getPosts } from "@/lib/actions/post";
 import { getCategories } from "@/lib/actions/category";
-import { POSTS_PER_PAGE } from "@/lib/constants";
+import { POSTS_PER_PAGE, SITE_DESCRIPTION, SITE_TAGLINE } from "@/lib/constants";
 import { parsePostSort } from "@/lib/utils";
 
 type Props = {
@@ -32,10 +32,10 @@ export default async function HomePage({ searchParams }: Props) {
             Fullstack Developer · Seoul, KR
           </p>
           <h1 className="mb-6 max-w-[680px] text-[clamp(38px,5vw,58px)] font-bold leading-[1.1] tracking-[-2.5px] [text-wrap:pretty]">
-            경험 기록
+            {SITE_TAGLINE}
           </h1>
           <p className="max-w-[400px] text-[17px] font-normal leading-[1.75] text-muted-foreground">
-            풀스택 개발 경험, 삽질 기록, 그리고 가끔 딴 생각들.
+            {SITE_DESCRIPTION}
           </p>
         </section>
 
